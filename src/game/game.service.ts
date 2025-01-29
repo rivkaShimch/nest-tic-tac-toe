@@ -3,31 +3,16 @@ import { Game } from '../database/schemas/game.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GameUtils } from './utils/game.utils';
-import { Player } from 'src/database/schemas/player.schema';
 
 @Injectable()
 export class GameService {
-    constructor(@InjectModel(Game.name) private gameModel: Model<Game>,
-        @InjectModel(Player.name) private playerModel: Model<Player>) { }
+    constructor(@InjectModel(Game.name) private gameModel: Model<Game>) { }
 
 
-    async processMove(playerEmail: string, move: { row: number; column: number } | null) {
+    async processMove(playerEmail: string, move: { row: number; column: number }, hard: string) {
         const game = await this.findActiveGame(playerEmail);
         if (!game) {
             throw new NotFoundException('No active game found');
-        }
-
-        // If move is null, it's the bot's first turn
-        if (!move) {
-            const botMove = GameUtils.generateBotMove(game.board);
-            game.board[botMove.row][botMove.column] = 'O';
-            game.currentTurn = 'player';
-
-            const status = GameUtils.checkGameStatus(game.board);
-            game.status = status;
-            await game.save();
-
-            return { status, botMove };
         }
 
         // Validate player's move
@@ -44,13 +29,18 @@ export class GameService {
         if (status !== 'ongoing') {
             game.status = status;
             await game.save();
-            await this.addGameToPlayer(game.playerEmail, game.status)
             return { status, botMove: null };
         }
 
         // Generate and make bot's move
         try {
-            const botMove = GameUtils.generateBotMove(game.board);
+            let botMove: { row: number; column: number }
+            if (hard === "true"){
+                botMove = GameUtils.strategicBotMove(game.board)
+            }
+            else
+                botMove = GameUtils.generateBotMove(game.board);
+
             game.board[botMove.row][botMove.column] = 'O';
             game.currentTurn = 'player';
 
@@ -58,7 +48,6 @@ export class GameService {
             status = GameUtils.checkGameStatus(game.board);
             game.status = status;
             await game.save();
-            await this.addGameToPlayer(game.playerEmail, game.status)
 
             return { status, botMove };
         } catch (error) {
@@ -71,23 +60,6 @@ export class GameService {
             playerEmail,
             status: 'ongoing'
         });
-    }
-
-    async addGameToPlayer(playerEmail: string, status: string) {
-        if (status !== "ongoing") {
-            let playerObj = await this.playerModel.findOne({ playerEmail })
-            if (playerObj) {
-                playerObj.gamesPlayed += 1
-                if (status === "lose")
-                    playerObj.losses += 1
-                else if (status === "win")
-                    playerObj.wins += 1
-                else if (status === "draw")
-                    playerObj.draws += 1
-
-                await playerObj.save()
-            }
-        }
     }
 
     async getOrCreateGame(playerEmail: string): Promise<Game> {
@@ -110,30 +82,29 @@ export class GameService {
                 currentTurn: 'player'
             });
             await game.save();
-            await this.playerModel.findOneAndUpdate(
-                { playerEmail },
-                { $setOnInsert: { playerEmail } },
-                { upsert: true, new: true, setDefaultsOnInsert: true }
-            );
         }
 
         return game;
     }
 
-    async restartGame (playerEmail: string):Promise<Game | null>{
+    async restartGame(playerEmail: string): Promise<Game | null> {
         let game = await this.gameModel.findOneAndUpdate(
-            { playerEmail, status:"ongoing" },
-            { $set: { playerEmail ,
-                board: [
-                    ['', '', ''],
-                    ['', '', ''],
-                    ['', '', '']
-                ],
-                status: 'ongoing',
-                currentTurn: 'player'} },
+            { playerEmail, status: "ongoing" },
+            {
+                $set: {
+                    playerEmail,
+                    board: [
+                        ['', '', ''],
+                        ['', '', ''],
+                        ['', '', '']
+                    ],
+                    status: 'ongoing',
+                    currentTurn: 'player'
+                }
+            },
             { new: true }
         );
-        if(!game){
+        if (!game) {
             throw new Error("No active game found for this player.");
         }
         return game

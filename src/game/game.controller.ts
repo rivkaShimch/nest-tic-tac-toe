@@ -1,10 +1,7 @@
-import { Body, Controller, Get, HttpStatus, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { GameService } from './game.service';
-import { ApiBody, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { CreateGameDto } from './dto/create-game.dto';
-import { GameResponseDto } from './dto/game-response.dto';
+import { ApiBody, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { GameplayMoveDto, GameplayResponseDto } from './dto/gameplay.dto';
-import { Game } from 'src/database/schemas/game.schema';
 
 @Controller('api')
 export class GameController {
@@ -34,26 +31,10 @@ export class GameController {
   @ApiBody({ type: GameplayMoveDto })
   async gameplay(
     @Query('playerEmail') playerEmail: string,
-    @Body() move?: GameplayMoveDto
+    @Query('hard') hard: string,
+    @Body() move: GameplayMoveDto
   ): Promise<GameplayResponseDto> {
-    // If no move is provided, this is the first turn
-    if (!move || (move.row === undefined || move.column === undefined)) {
-      const game = await this.gameService.getOrCreateGame(playerEmail);
-
-      // Bot makes first move if it's bot's turn
-      if (game.currentTurn === 'bot') {
-        const { status, botMove } = await this.gameService.processMove(playerEmail, null);
-        return { status, botMove };
-      }
-
-      return {
-        status: game.status,
-        botMove: null
-      };
-    }
-
-    // Process player's move and get bot's response
-    return this.gameService.processMove(playerEmail, { row: move.row, column: move.column });
+    return this.gameService.processMove(playerEmail, { row: move.row, column: move.column }, hard);
   }
 
 

@@ -69,4 +69,102 @@ export class GameUtils {
     static isMoveValid(board: string[][], move: { row: number; column: number }): boolean {
         return board[move.row][move.column] === '';
     }
+
+
+    static strategicBotMove(board: string[][]): { row: number; column: number } {
+        // If bot can win
+        const winningMove = this.findWinningMove(board, 'O');
+        if (winningMove) return winningMove;
+
+        // Block player's winning move
+        const blockingMove = this.findWinningMove(board, 'X');
+        if (blockingMove) return blockingMove;
+
+        // Take center if available
+        if (board[1][1] === '') {
+            return { row: 1, column: 1 };
+        }
+
+        // Take corners if available (prioritized strategy)
+        const corners = [
+            { row: 0, column: 0 },
+            { row: 0, column: 2 },
+            { row: 2, column: 0 },
+            { row: 2, column: 2 }
+        ];
+
+        for (const corner of corners) {
+            if (board[corner.row][corner.column] === '') {
+                return corner;
+            }
+        }
+
+        const sides = [
+            { row: 0, column: 1 },
+            { row: 1, column: 0 },
+            { row: 1, column: 2 },
+            { row: 2, column: 1 }
+        ];
+
+        for (const side of sides) {
+            if (board[side.row][side.column] === '') {
+                return side;
+            }
+        }
+
+        // Find any empty cell
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                if (board[row][col] === '') {
+                    return { row, column: col };
+                }
+            }
+        }
+
+        throw new Error('No valid moves available');
+    }
+
+    // Find winning moves
+    private static findWinningMove(board: string[][], player: string): { row: number; column: number } | null {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (board[i][j] === '') {
+                    board[i][j] = player;
+                    if (this.checkWin(board, player)) {
+                        board[i][j] = ''; 
+                        return { row: i, column: j };
+                    }
+                    board[i][j] = ''; 
+                }
+            }
+        }
+        return null;
+    }
+
+    // Check for a win
+    private static checkWin(board: string[][], player: string): boolean {
+        // Check rows
+        for (let i = 0; i < 3; i++) {
+            if (board[i][0] === player && board[i][1] === player && board[i][2] === player) {
+                return true;
+            }
+        }
+
+        // Check columns
+        for (let j = 0; j < 3; j++) {
+            if (board[0][j] === player && board[1][j] === player && board[2][j] === player) {
+                return true;
+            }
+        }
+
+        // Check diagonals
+        if (board[0][0] === player && board[1][1] === player && board[2][2] === player) {
+            return true;
+        }
+        if (board[0][2] === player && board[1][1] === player && board[2][0] === player) {
+            return true;
+        }
+
+        return false;
+    }
 }

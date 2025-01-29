@@ -14,7 +14,7 @@ export class GameplayMoveDto {
   @Min(0)
   @Max(2)
   @Type(() => Number)
-  row?: number;
+  row: number;
 
   @ApiPropertyOptional({
     description: 'Column index (0-2)',
@@ -27,7 +27,7 @@ export class GameplayMoveDto {
   @Min(0)
   @Max(2)
   @Type(() => Number)
-  column?: number;
+  column: number;
 }
 
 export class GameplayResponseDto {
