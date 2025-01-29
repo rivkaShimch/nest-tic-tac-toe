@@ -1,6 +1,5 @@
 export class GameUtils {
     static checkGameStatus(board: string[][]): 'ongoing' | 'win' | 'draw' | 'lose' {
-        // Check rows
         for (let i = 0; i < 3; i++) {
             if (board[i][0] !== '' &&
                 board[i][0] === board[i][1] &&
@@ -11,7 +10,6 @@ export class GameUtils {
             }
         }
 
-        // Check columns
         for (let i = 0; i < 3; i++) {
             if (board[0][i] !== '' &&
                 board[0][i] === board[1][i] &&
@@ -22,7 +20,6 @@ export class GameUtils {
             }
         }
 
-        // Check diagonals
         if (board[0][0] !== '' &&
             board[0][0] === board[1][1] &&
             board[1][1] === board[2][2]) {
@@ -76,16 +73,13 @@ export class GameUtils {
         const winningMove = this.findWinningMove(board, 'O');
         if (winningMove) return winningMove;
 
-        // Block player's winning move
         const blockingMove = this.findWinningMove(board, 'X');
         if (blockingMove) return blockingMove;
 
-        // Take center if available
         if (board[1][1] === '') {
             return { row: 1, column: 1 };
         }
 
-        // Take corners if available (prioritized strategy)
         const corners = [
             { row: 0, column: 0 },
             { row: 0, column: 2 },
@@ -124,7 +118,6 @@ export class GameUtils {
         throw new Error('No valid moves available');
     }
 
-    // Find winning moves
     private static findWinningMove(board: string[][], player: string): { row: number; column: number } | null {
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -141,23 +134,19 @@ export class GameUtils {
         return null;
     }
 
-    // Check for a win
     private static checkWin(board: string[][], player: string): boolean {
-        // Check rows
         for (let i = 0; i < 3; i++) {
             if (board[i][0] === player && board[i][1] === player && board[i][2] === player) {
                 return true;
             }
         }
 
-        // Check columns
         for (let j = 0; j < 3; j++) {
             if (board[0][j] === player && board[1][j] === player && board[2][j] === player) {
                 return true;
             }
         }
 
-        // Check diagonals
         if (board[0][0] === player && board[1][1] === player && board[2][2] === player) {
             return true;
         }

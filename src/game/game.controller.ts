@@ -37,9 +37,6 @@ export class GameController {
     return this.gameService.processMove(playerEmail, { row: move.row, column: move.column }, hard);
   }
 
-
-
-
   @Get('restart')
   @ApiOperation({ summary: 'Restart current game' })
   @ApiQuery({

@@ -15,16 +15,13 @@ export class GameService {
             throw new NotFoundException('No active game found');
         }
 
-        // Validate player's move
         if (!GameUtils.isMoveValid(game.board, move)) {
             throw new BadRequestException('Invalid move: cell already occupied');
         }
 
-        // Make player's move
         game.board[move.row][move.column] = 'X';
         game.currentTurn = 'bot';
 
-        // Check game state after player's move
         let status = GameUtils.checkGameStatus(game.board);
         if (status !== 'ongoing') {
             game.status = status;
@@ -32,7 +29,6 @@ export class GameService {
             return { status, botMove: null };
         }
 
-        // Generate and make bot's move
         try {
             let botMove: { row: number; column: number }
             if (hard === "true"){
@@ -44,7 +40,6 @@ export class GameService {
             game.board[botMove.row][botMove.column] = 'O';
             game.currentTurn = 'player';
 
-            // Check game state after bot's move
             status = GameUtils.checkGameStatus(game.board);
             game.status = status;
             await game.save();
@@ -63,7 +58,6 @@ export class GameService {
     }
 
     async getOrCreateGame(playerEmail: string): Promise<Game> {
-        // Try to find an existing ongoing game
         let game = await this.gameModel.findOne({
             playerEmail,
             status: 'ongoing'
